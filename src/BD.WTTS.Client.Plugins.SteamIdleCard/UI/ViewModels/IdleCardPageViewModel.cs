@@ -2,10 +2,13 @@ using BD.SteamClient.Models;
 using BD.SteamClient.Models.Idle;
 using BD.SteamClient.Services;
 using BD.SteamClient.Constants;
+using Avalonia.Threading;
+using System.Runtime.Devices;
+using BD.WTTS.Helpers;
 
 namespace BD.WTTS.UI.ViewModels;
 
-public sealed partial class IdleCardPageViewModel : ViewModelBase
+public sealed partial class IdleCardPageViewModel
 {
     readonly ISteamService SteamTool = ISteamService.Instance;
     readonly ISteamIdleCardService IdleCard = ISteamIdleCardService.Instance;
@@ -111,6 +114,8 @@ public sealed partial class IdleCardPageViewModel : ViewModelBase
 
             if (!RunState)
             {
+                TracepointHelper.TrackEvent("IdleCardRun");
+
                 if (SteamLoginState.Success && SteamLoginState.SteamId != (ulong?)SteamConnectService.Current.CurrentSteamUser?.SteamId64)
                 {
                     Toast.Show(ToastIcon.Warning, Strings.SteamIdle_LoginSteamUserError);
@@ -129,13 +134,7 @@ public sealed partial class IdleCardPageViewModel : ViewModelBase
             }
             else
             {
-                RunState = false;
-                StopIdle();
-                RunOrStopAutoNext(false);
-                RunOrStopAutoCardDropCheck(false);
-                IdleTime = default;
-                ResetCurrentIdle();
-                ChangeRunTxt();
+                StopIdleRun();
             }
 
             RunLoaingState = false;
@@ -145,6 +144,17 @@ public sealed partial class IdleCardPageViewModel : ViewModelBase
         {
             Toast.Show(ToastIcon.Warning, Strings.Idle_LoaingTips);
         }
+    }
+
+    private void StopIdleRun()
+    {
+        RunState = false;
+        StopIdle();
+        RunOrStopAutoNext(false);
+        RunOrStopAutoCardDropCheck(false);
+        IdleTime = default;
+        ResetCurrentIdle();
+        ChangeRunTxt();
     }
 
     /// <summary>
@@ -307,17 +317,26 @@ public sealed partial class IdleCardPageViewModel : ViewModelBase
     {
         try
         {
-            var isTokenAccess = await Ioc.Get<ISteamAccountService>().CheckAccessTokenValidation(SteamLoginState.AccessToken!);
+            var isTokenAccess = Ioc.Get<ISteamAccountService>().IsAccessTokenValid(SteamLoginState.AccessToken!);
             if (isTokenAccess)
             {
                 await RunLoadBadges();
             }
             else
             {
-                await ISecureStorage.Instance.RemoveAsync(ISteamSessionService.CurrentSteamUserKey);
-                SteamLoginState = new();
-                await LoginSteam();
-                await RunLoadBadges();
+                var new_accessToken = await Ioc.Get<ISteamAccountService>().RefreshAccessToken(SteamLoginState.SteamId, SteamLoginState.RefreshToken!);
+                if (new_accessToken is not null) // 刷新Token
+                {
+                    await RefreshAccessTokenAsync(new_accessToken);
+                    await RunLoadBadges();
+                }
+                else // 重新登录
+                {
+                    await ISecureStorage.Instance.RemoveAsync(ISteamSessionService.CurrentSteamUserKey);
+                    SteamLoginState = new();
+                    await LoginSteam();
+                    await RunLoadBadges();
+                }
             }
             return true;
         }
@@ -377,17 +396,19 @@ public sealed partial class IdleCardPageViewModel : ViewModelBase
     {
         try
         {
-            IdleGameList.Clear();
             var badges = Badges.Where(w => w.CardsRemaining != 0);
-            var apps = SteamIdleSettings.IdleSequentital.Value switch
+            var apps = (SteamIdleSettings.IdleSequentital.Value switch
             {
                 IdleSequentital.LeastCards => badges.OrderBy(o => o.CardsRemaining).Select(s => new IdleApp(s)),
                 IdleSequentital.Mostcards => badges.OrderByDescending(o => o.CardsRemaining).Select(s => new IdleApp(s)),
                 IdleSequentital.Mostvalue => badges.OrderByDescending(o => o.RegularAvgPrice).Select(s => new IdleApp(s)),
                 _ => badges.Select(s => new IdleApp(s)),
-            };
-            foreach (var app in apps)
-                IdleGameList.Add(app);
+            }).ToImmutableList();
+            Dispatcher.UIThread.Invoke(() =>
+            {
+                IdleGameList.Clear();
+                EnumerableExtensions.AddRange(IdleGameList, apps);
+            });
             return true;
         }
         catch (Exception ex)
@@ -428,10 +449,11 @@ public sealed partial class IdleCardPageViewModel : ViewModelBase
         {
             var multi = IdleGameList.Where(z => z.Badge.HoursPlayed >= SteamIdleSettings.MinRunTime.Value).ToList();
 
-            if (multi.Count > 1 || (multi.Count == 1 && IdleGameList.Count == 1))
+            var isLastSingle = multi.Count == 1 && IdleGameList.Count == 1; // 是否只剩最后一个游戏
+            if (multi.Count > 1 || isLastSingle)
             {
                 idleApp = VerifyIsNext(multi, isNext);
-                PauseAutoNext(false);
+                PauseAutoNext(isLastSingle);
                 StartSoloIdle(idleApp);
             }
             else
@@ -776,6 +798,23 @@ public sealed partial class IdleCardPageViewModel : ViewModelBase
         var message = Strings.Idle_Complete.Format(DropCardsCount, IdleTime.TotalHours.ToInt32());
         Toast.Show(ToastIcon.Success, message);
         INotificationService.Instance.Notify(message, NotificationType.Message);
+    }
+
+    private async Task RefreshAccessTokenAsync(string new_accessToken)
+    {
+        SteamLoginState.AccessToken = new_accessToken;
+        SteamSession session = new SteamSession()
+        {
+            SteamId = SteamLoginState.SteamId.ToString(),
+            AccessToken = SteamLoginState.AccessToken,
+            RefreshToken = SteamLoginState.RefreshToken
+        };
+        session.GenerateSetCookie();
+        var sessionService = Ioc.Get<ISteamSessionService>();
+        sessionService.AddOrSetSeesion(session);
+
+        if (LoginViewModel is null || LoginViewModel.RemenberLogin)
+            await sessionService.SaveSession(session);
     }
     #endregion
 

@@ -195,13 +195,25 @@ public sealed partial class ProxySettings_ : IProxySettings, ISettings, ISetting
     /// 自定义 DNS over HTTPS 地址
     /// </summary>
     [MPKey(22), MP2Key(22), JsonPropertyOrder(22)]
-    public string? CustomDohAddres { get; set; } = IProxySettings.DefaultCustomDohAddres;
+    public string? CustomDohAddres2 { get; set; } = IProxySettings.DefaultCustomDohAddres2;
 
     /// <summary>
     /// 加速页面 Tab 选项卡选中下标
     /// </summary>
     [MPKey(23), MP2Key(23), JsonPropertyOrder(23)]
-    public int AcceleratorTabsSelectedIndex { get; set; }
+    public int AcceleratorTabsSelectedIndex { get; set; } = IProxySettings.DefaultAcceleratorTabsSelectedIndex;
+
+    /// <summary>
+    /// 加速后自动唤起 Watt 加速器界面
+    /// </summary>
+    [MPKey(24), MP2Key(24), JsonPropertyOrder(24)]
+    public bool AutoShowWattAcceleratorWindow { get; set; } = IProxySettings.DefaultAutoShowWattAcceleratorWindow;
+
+    /// <summary>
+    /// 加速前进行 DNS 可用性检查
+    /// </summary>
+    [MPKey(25), MP2Key(25), JsonPropertyOrder(25)]
+    public bool ProxyBeforeDNSCheck { get; set; } = IProxySettings.DefaultProxyBeforeDNSCheck;
 
 }
 
@@ -362,12 +374,25 @@ public static partial class ProxySettings
     /// <summary>
     /// 自定义 DNS over HTTPS 地址
     /// </summary>
-    public static SettingsProperty<string, ProxySettings_> CustomDohAddres { get; }
-        = new(DefaultCustomDohAddres);
+    public static SettingsProperty<string, ProxySettings_> CustomDohAddres2 { get; }
+        = new(DefaultCustomDohAddres2);
 
     /// <summary>
     /// 加速页面 Tab 选项卡选中下标
     /// </summary>
     public static SettingsStructProperty<int, ProxySettings_> AcceleratorTabsSelectedIndex { get; }
-        = new();
+        = new(DefaultAcceleratorTabsSelectedIndex);
+
+    /// <summary>
+    /// 加速后自动唤起 Watt 加速器界面
+    /// </summary>
+    public static SettingsStructProperty<bool, ProxySettings_> AutoShowWattAcceleratorWindow { get; }
+        = new(DefaultAutoShowWattAcceleratorWindow);
+
+    /// <summary>
+    /// 加速前进行 DNS 可用性检查
+    /// </summary>
+    public static SettingsStructProperty<bool, ProxySettings_> ProxyBeforeDNSCheck { get; }
+        = new(DefaultProxyBeforeDNSCheck);
+
 }

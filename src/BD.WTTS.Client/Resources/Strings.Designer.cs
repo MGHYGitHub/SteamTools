@@ -124,7 +124,7 @@ namespace BD.WTTS.Client.Resources {
         }
         
         /// <summary>
-        ///   查找类似 调整当前设备上共享的 Steam 账号优先级顺序，用于解决想玩账号 B 的共享却一直使用的是账号 A 的共享这种问题，拖拽操作从上到下的排序为共享库使用的优先级顺序，也可以选择暂时禁用或启用指定账号的共享。调整后保存重启 Steam 生效！ 的本地化字符串。
+        ///   查找类似 (因 Steam 已抛弃旧版本家庭共享 该功能已经失效！) 调整当前设备上共享的 Steam 账号优先级顺序，用于解决想玩账号 B 的共享却一直使用的是账号 A 的共享这种问题，拖拽操作从上到下的排序为共享库使用的优先级顺序，也可以选择暂时禁用或启用指定账号的共享。调整后保存重启 Steam 生效！ 的本地化字符串。
         /// </summary>
         public static string AccountChange_ShareManageAboutTips {
             get {
@@ -477,7 +477,7 @@ namespace BD.WTTS.Client.Resources {
         }
         
         /// <summary>
-        ///   查找类似 ASF 挂卡 的本地化字符串。
+        ///   查找类似 ASF 控制台 的本地化字符串。
         /// </summary>
         public static string ArchiSteamFarmPlus {
             get {
@@ -1350,11 +1350,20 @@ namespace BD.WTTS.Client.Resources {
         }
         
         /// <summary>
-        ///   查找类似 打开 Hosts 所在文件夹 的本地化字符串。
+        ///   查找类似 打开 Hosts 文件夹 的本地化字符串。
         /// </summary>
         public static string CommunityFix_OpenHostsDir {
             get {
                 return ResourceManager.GetString("CommunityFix_OpenHostsDir", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 加速日志 的本地化字符串。
+        /// </summary>
+        public static string CommunityFix_ProxyLog {
+            get {
+                return ResourceManager.GetString("CommunityFix_ProxyLog", resourceCulture);
             }
         }
         
@@ -2673,7 +2682,7 @@ namespace BD.WTTS.Client.Resources {
         }
         
         /// <summary>
-        ///   查找类似 安装Watt加速器插件 的本地化字符串。
+        ///   查找类似 安装 Watt 加速器插件 的本地化字符串。
         /// </summary>
         public static string GameAccelerator_InstallWattAccelerator {
             get {
@@ -2691,6 +2700,24 @@ namespace BD.WTTS.Client.Resources {
         }
         
         /// <summary>
+        ///   查找类似 加速后唤起 Watt 加速器界面 的本地化字符串。
+        /// </summary>
+        public static string GameAccelerator_SetShowWattWindow {
+            get {
+                return ResourceManager.GetString("GameAccelerator_SetShowWattWindow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 打开 Watt 加速器 的本地化字符串。
+        /// </summary>
+        public static string GameAccelerator_ShowWattAccelerator {
+            get {
+                return ResourceManager.GetString("GameAccelerator_ShowWattAccelerator", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 停止 的本地化字符串。
         /// </summary>
         public static string GameAccelerator_Stop {
@@ -2700,7 +2727,7 @@ namespace BD.WTTS.Client.Resources {
         }
         
         /// <summary>
-        ///   查找类似 卸载Watt加速器插件 的本地化字符串。
+        ///   查找类似 卸载 Watt 加速器插件 的本地化字符串。
         /// </summary>
         public static string GameAccelerator_UninstallWattAccelerator {
             get {
@@ -4196,6 +4223,123 @@ namespace BD.WTTS.Client.Resources {
         }
         
         /// <summary>
+        ///   查找类似 Steam App 令牌共存 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticator {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticator", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 确认 Steam App 令牌验证码 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticator_ConfirmSteamAppAuthenticatorCode {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticator_ConfirmSteamAppAuthenticatorCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 初始化本地令牌错误 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticator_InitLocalAuthenticatorError {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticator_InitLocalAuthenticatorError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 请输入 Steam App 中显示的令牌验证码 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticator_InputSteamAppAuthenticatorCode {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticator_InputSteamAppAuthenticatorCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 打开 Steam App 绑定令牌后在此页面输入验证 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticator_InputSteamAppAuthenticatorCodeTips {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticator_InputSteamAppAuthenticatorCodeTips", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 登录请求错误 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticator_LoginRequestError {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticator_LoginRequestError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 解析用户 Steam 令牌信息失败 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticator_ParseUser2FAInfoError {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticator_ParseUser2FAInfoError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 获取用户 Steam 令牌信息失败 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticator_RequestUser2FAInfoError {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticator_RequestUser2FAInfoError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 保存令牌失败 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticator_SaveLocalAuthenticatorError {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticator_SaveLocalAuthenticatorError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Steam App 令牌验证码 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticator_SteamAppAuthenticatorCode {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticator_SteamAppAuthenticatorCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 请输入已在 Steam App 中绑定的令牌当前的令牌验证码 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticator_SteamGuardCodeEmptyError {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticator_SteamGuardCodeEmptyError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 验证令牌错误 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticator_VerifySteamGuardCodeError {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticator_VerifySteamGuardCodeError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 在 Watt Toolkit 中与官方 Steam App 中使用相同的令牌数据导入方式（推荐✨） 的本地化字符串。
+        /// </summary>
+        public static string LocalAuth_JoinSteamAuthenticatorDesc {
+            get {
+                return ResourceManager.GetString("LocalAuth_JoinSteamAuthenticatorDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 确定要注销当前令牌登录的账号信息吗？ 的本地化字符串。
         /// </summary>
         public static string LocalAuth_LogoutTip {
@@ -4286,7 +4430,7 @@ namespace BD.WTTS.Client.Resources {
         }
         
         /// <summary>
-        ///   查找类似 使用系统内置的账户加密来保护和加密你的数据。这将把你的令牌锁定在这台计算机上，即使令牌文件被复制，也无法解密出令牌数据。单如果你要格式化你的硬盘、重新安装系统或删除这个系统用户账户，你必须先关掉此功能，否则你的令牌会再也无法解密！！ 的本地化字符串。
+        ///   查找类似 使用系统内置的账户加密来保护和加密你的数据。这将把你的令牌锁定在这台计算机上，即使令牌文件被复制，也无法解密出令牌数据。如果你要格式化你的硬盘、重新安装系统或删除这个系统用户账户，你必须先关掉此功能，否则你的令牌会再也无法解密！！ 的本地化字符串。
         /// </summary>
         public static string LocalAuth_ProtectionAuth_IsOnlyCurrentComputerEncryptTip {
             get {
@@ -5271,6 +5415,15 @@ namespace BD.WTTS.Client.Resources {
         }
         
         /// <summary>
+        ///   查找类似 打开插件 AppData 文件夹 的本地化字符串。
+        /// </summary>
+        public static string Plugin_OpenAppDataFolder {
+            get {
+                return ResourceManager.GetString("Plugin_OpenAppDataFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 打开插件缓存文件夹 的本地化字符串。
         /// </summary>
         public static string Plugin_OpenCacheFolder {
@@ -6208,11 +6361,83 @@ namespace BD.WTTS.Client.Resources {
         }
         
         /// <summary>
+        ///   查找类似 地址 的本地化字符串。
+        /// </summary>
+        public static string Settings_Proxy_IPAddress {
+            get {
+                return ResourceManager.GetString("Settings_Proxy_IPAddress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 密码 的本地化字符串。
+        /// </summary>
+        public static string Settings_Proxy_Password {
+            get {
+                return ResourceManager.GetString("Settings_Proxy_Password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 端口 的本地化字符串。
+        /// </summary>
+        public static string Settings_Proxy_Port {
+            get {
+                return ResourceManager.GetString("Settings_Proxy_Port", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 代理类型 的本地化字符串。
+        /// </summary>
+        public static string Settings_Proxy_ProxyType {
+            get {
+                return ResourceManager.GetString("Settings_Proxy_ProxyType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 代理监听 IP 地址 的本地化字符串。
         /// </summary>
         public static string Settings_Proxy_SystemProxyIp {
             get {
                 return ResourceManager.GetString("Settings_Proxy_SystemProxyIp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 代理监听端口 的本地化字符串。
+        /// </summary>
+        public static string Settings_Proxy_SystemProxyPortId {
+            get {
+                return ResourceManager.GetString("Settings_Proxy_SystemProxyPortId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 仅对 PAC 与 System 代理模式生效 的本地化字符串。
+        /// </summary>
+        public static string Settings_Proxy_SystemProxyPortId_Tip {
+            get {
+                return ResourceManager.GetString("Settings_Proxy_SystemProxyPortId_Tip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 二级代理 的本地化字符串。
+        /// </summary>
+        public static string Settings_Proxy_TwoLevelAgent {
+            get {
+                return ResourceManager.GetString("Settings_Proxy_TwoLevelAgent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 用户名 的本地化字符串。
+        /// </summary>
+        public static string Settings_Proxy_UserName {
+            get {
+                return ResourceManager.GetString("Settings_Proxy_UserName", resourceCulture);
             }
         }
         

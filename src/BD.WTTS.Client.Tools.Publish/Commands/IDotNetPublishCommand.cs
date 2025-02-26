@@ -5,6 +5,7 @@ using System.Security.Policy;
 using static BD.WTTS.Client.Tools.Publish.Helpers.DotNetCLIHelper;
 using static BD.WTTS.GlobalDllImportResolver;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using System.Runtime.InteropServices;
 
 namespace BD.WTTS.Client.Tools.Publish.Commands;
 
@@ -659,6 +660,14 @@ $"""
 
                     var aspnetcore_path = get_aspnetcore_path(programFiles);
 
+                    static string get_win_desktop_path(string rootPath) => Path.Combine(rootPath,
+                        "dotnet",
+                        "shared",
+                        "Microsoft.WindowsDesktop.App",
+                        $"{Environment.Version.Major}.{Environment.Version.Minor}.{Environment.Version.Build}");
+
+                    var win_desktop_path = get_win_desktop_path(programFiles);
+
                     static string get_netcore_path(string rootPath) => Path.Combine(rootPath,
                         "dotnet",
                         "shared",
@@ -676,6 +685,7 @@ $"""
                         File.Copy(hostfxr_path, dest_hostfxr_path);
                         CopyDirectory(netcore_path, get_netcore_path(rootPublishDir), true);
                         CopyDirectory(aspnetcore_path, get_aspnetcore_path(rootPublishDir), true);
+                        CopyDirectory(win_desktop_path, get_win_desktop_path(rootPublishDir), true);
                     }
                 }
                 break;
@@ -834,6 +844,7 @@ $"""
                         arg.ReadyToRun = false;
                         arg.Trimmed = false;
                         arg.SelfContained = false;
+                        arg.Architecture = architecture;
                         // https://learn.microsoft.com/zh-cn/dotnet/core/tools/dotnet-run
                         // https://download.visualstudio.microsoft.com/download/pr/c1e2729e-ab96-4929-911d-bf0f24f06f47/1b2f39cbc4eb530e39cfe6f54ce78e45/aspnetcore-runtime-7.0.7-linux-x64.tar.gz
                         // dotnet "Steam++.dll" -clt devtools
@@ -880,7 +891,9 @@ $"""
         bool? EnableMsixTooling = null,
         bool? GenerateAppxPackageOnBuild = null,
         bool? StripSymbols = null,
-        bool? CreatePackage = null)
+        bool? CreatePackage = null,
+        Architecture? Architecture = null
+        )
     {
         string? _Configuration;
 
@@ -1141,11 +1154,13 @@ publish -c {0} -p:OutputType={1} -p:PublishDir=bin\{0}\Publish\win-any -p:Publis
         yield return AssemblyInfo.Accelerator;
         yield return AssemblyInfo.GameAccount;
         yield return AssemblyInfo.GameList;
-        //yield return AssemblyInfo.ArchiSteamFarmPlus;
         yield return AssemblyInfo.Authenticator;
-        if (platform == Platform.Windows)
-            yield return AssemblyInfo.GameTools;
         yield return AssemblyInfo.SteamIdleCard;
+        if (platform == Platform.Windows)
+        {
+            yield return AssemblyInfo.ArchiSteamFarmPlus;
+            yield return AssemblyInfo.GameTools;
+        }
     }
 
     /// <summary>

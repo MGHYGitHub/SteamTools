@@ -2,6 +2,7 @@ using AppResources = BD.WTTS.Client.Resources.Strings;
 using SJsonSerializer = System.Text.Json.JsonSerializer;
 using Avalonia.Platform;
 using BD.WTTS.UI.Views.Pages;
+using BD.WTTS.Helpers;
 
 namespace BD.WTTS.UI.ViewModels;
 
@@ -93,12 +94,18 @@ public sealed partial class GameAccountPageViewModel
     {
         GamePlatforms?[0].LoadUsers();
 
+        if (!OperatingSystem2.IsWindows())
+        {
+            AddGamePlatforms = [];
+            return;
+        }
+
         var temp = GetSupportPlatforms();
         if (temp != null)
         {
             if (GameAccountSettings.EnablePlatforms.Any_Nullable())
             {
-                AddGamePlatforms = new ObservableCollection<PlatformAccount>();
+                AddGamePlatforms = [];
 
                 foreach (var p in temp)
                 {

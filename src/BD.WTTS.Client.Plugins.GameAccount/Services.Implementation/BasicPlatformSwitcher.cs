@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using AppResources = BD.WTTS.Client.Resources.Strings;
 
 namespace BD.WTTS.Services.Implementation;
@@ -39,7 +40,7 @@ public sealed class BasicPlatformSwitcher : IPlatformSwitcher
         {
             var uniqueId = JTokenHelper.ReadDict(platform.FullName).FirstOrDefault(x => x.Value == accName).Key;
 
-            if (!string.IsNullOrEmpty(uniqueId) && !Registry2.SetRegistryKey(platform.UniqueIdPath, uniqueId)) // Remove "REG:" and read data
+            if (!string.IsNullOrEmpty(uniqueId) && !IRegistryService.Instance.SetRegistryKey(platform.UniqueIdPath, uniqueId)) // Remove "REG:" and read data
             {
                 Toast.Show(ToastIcon.Info, AppResources.Info_AccountAlreadyLogin);
                 return false;
@@ -63,17 +64,10 @@ public sealed class BasicPlatformSwitcher : IPlatformSwitcher
 
                 var regValue = regJson[accFile] ?? "";
 
-                if (DesktopBridge.IsRunningAsUwp)
+                if (!IRegistryService.Instance.SetRegistryKey(accFile[4..], regValue)) // Remove "REG:" and read data
                 {
-                    await SetEpicCurrentUserAsync(regValue);
-                }
-                else
-                {
-                    if (!Registry2.SetRegistryKey(accFile[4..], regValue)) // Remove "REG:" and read data
-                    {
-                        Toast.Show(ToastIcon.Error, AppResources.Error_WriteRegistryFailed);
-                        return false;
-                    }
+                    Toast.Show(ToastIcon.Error, AppResources.Error_WriteRegistryFailed);
+                    return false;
                 }
                 continue;
             }
@@ -89,8 +83,9 @@ public sealed class BasicPlatformSwitcher : IPlatformSwitcher
                 var selector = accFile.Split("::")[2];
                 if (!JTokenHelper.ReplaceVarInJsonFile(path, selector, jToken))
                 {
-                    Toast.Show(ToastIcon.Error, AppResources.Error_ModifyJsonFileFailed);
-                    return false;
+                    //Toast.Show(ToastIcon.Error, AppResources.Error_ModifyJsonFileFailed);
+                    Log.Error(nameof(BasicPlatformSwitcher), $"Failed to modify JSON file: {path}");
+                    //return false;
                 }
                 continue;
             }
@@ -143,7 +138,7 @@ public sealed class BasicPlatformSwitcher : IPlatformSwitcher
         }
 
         //if (BasicSettings.AutoStart)
-        RunPlatformProcess(platform, true);
+        RunPlatformProcess(platform, false);
 
         //if (accName != "" && BasicSettings.AutoStart && AppSettings.MinimizeOnSwitch) _ = AppData.InvokeVoidAsync("hideWindow");
 
@@ -186,7 +181,7 @@ public sealed class BasicPlatformSwitcher : IPlatformSwitcher
         {
             var path = uniqueIdFile.Split("::")[0];
             var selector = uniqueIdFile.Split("::")[1];
-            JTokenHelper.ReplaceVarInJsonFile(path, selector, "");
+            JTokenHelper.ReplaceVarInJsonFile(path, selector, string.Empty);
         }
 
         if (platform.UniqueIdType != UniqueIdType.CREATE_ID_FILE) return true;
@@ -195,21 +190,6 @@ public sealed class BasicPlatformSwitcher : IPlatformSwitcher
         IPlatformService.Instance.FileTryDelete(uniqueIdFile);
 
         return true;
-    }
-
-    async ValueTask SetEpicCurrentUserAsync(string userName)
-    {
-#if WINDOWS
-        string contents =
-$"""
-Windows Registry Editor Version 5.00
-; {AssemblyInfo.Trademark} BD.WTTS.Services.Implementation.BasicPlatformSwitcher.SetEpicCurrentUserAsync
-[HKEY_CURRENT_USER\Software\Epic Games\Unreal Engine\Identifiers]
-"AccountId"="{userName}"
-""";
-        var regpath = IOPath.GetCacheFilePath(WindowsPlatformServiceImpl.CacheTempDirName, "SwitchEpicUser", FileEx.Reg);
-        await WindowsPlatformServiceImpl.StartProcessRegeditAsync(regpath, contents);
-#endif
     }
 
     async ValueTask<bool> DeleteFileOrFolder(string accFile, PlatformAccount platform)
@@ -221,18 +201,11 @@ Windows Registry Editor Version 5.00
             // If set to clear LoginCache for account before adding (Enabled by default):
             if (platform.IsRegDeleteOnClear)
             {
-                if (Registry2.DeleteRegistryKey(accFile[4..])) return true;
+                if (IRegistryService.Instance.DeleteRegistryKey(accFile[4..])) return true;
             }
             else
             {
-                if (DesktopBridge.IsRunningAsUwp)
-                {
-                    await SetEpicCurrentUserAsync(string.Empty);
-                    return true;
-                }
-                else
-                    if (Registry2.SetRegistryKey(accFile[4..])) return true;
-
+                if (IRegistryService.Instance.SetRegistryKey(accFile[4..])) return true;
             }
             Toast.Show(ToastIcon.Error, AppResources.Error_WriteRegistryFailed);
             return false;
@@ -543,7 +516,47 @@ Windows Registry Editor Version 5.00
                 if (js == null)
                     continue;
 
-                var originalValue = js.SelectToken(selector);
+                JToken? originalValue = null;
+
+                try
+                {
+                    originalValue = js.SelectToken(selector);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(nameof(CurrnetUserAdd), ex, $"Failed to select token: {selector}");
+                }
+
+                if (originalValue == null)
+                {
+                    // 尝试以数组形式再次寻找
+                    try
+                    {
+                        var tokens = js.SelectTokens(selector);
+
+                        //暂时将就写一个临时的战网处理方法解决问题
+                        if (platform.Platform == ThirdpartyPlatform.BattleNet)
+                        {
+                            originalValue = tokens.FirstOrDefault(x =>
+                            {
+                                var temp = x.Parent?.Parent?.Parent?.Parent?["Path"]?.Value<string>();
+                                var temp2 = platform.FolderPath;
+                                if (temp != null && temp2 != null)
+                                    return string.Equals(
+                                        temp.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                                        temp2.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                                        StringComparison.OrdinalIgnoreCase);
+                                return false;
+                            });
+                        }
+                        originalValue ??= tokens.FirstOrDefault();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(nameof(CurrnetUserAdd), ex, $"Failed to select tokens: {selector}");
+                    }
+                }
+
                 if (originalValue == null)
                     continue;
 
@@ -575,14 +588,16 @@ Windows Registry Editor Version 5.00
             // FILE OR FOLDER
             if (PathHelper.HandleFileOrFolder(accFile, savedFile, localCachePath, false, platform.FolderPath)) continue;
 
-            // Could not find file/folder
-            Toast.Show(ToastIcon.Error, AppResources.Error_CannotFindAccountFile_.Format(accFile));
-
-            return false;
-
-            // TODO: Run some action that can be specified in the Platforms.json file
-            // Add for the start, and end of this function -- To allow 'plugins'?
-            // Use reflection?
+            if (platform.AllFilesRequired)
+            {
+                // Could not find file/folder
+                Toast.Show(ToastIcon.Error, AppResources.Error_CannotFindAccountFile_.Format(accFile));
+                return false;
+            }
+            else
+            {
+                Log.Warn(nameof(CurrnetUserAdd), $"{accFile} Could not find file/folder");
+            }
         }
 
         JTokenHelper.SaveRegJson(regJson, platform.RegJsonPath(name));

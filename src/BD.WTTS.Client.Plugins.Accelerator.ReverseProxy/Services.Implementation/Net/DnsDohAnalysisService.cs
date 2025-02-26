@@ -24,7 +24,7 @@ sealed class DnsDohAnalysisService : GeneralHttpClientFactory
     {
     }
 
-    public const string DefaultDohAddres = Dnspod_DohAddres;
+    public const string DefaultDohAddres = Dnspod_DohAddres2;
 
     static Uri GetDohAddres(string? dohAddres)
     {
@@ -53,16 +53,22 @@ sealed class DnsDohAnalysisService : GeneralHttpClientFactory
     {
         if (dnsClients.TryGetValue(dohAddresUri, out var value))
             return value;
-        var client = CreateClient($"{TAG}_{dohAddresUri}", HttpHandlerCategory.Default);
-        //var handler = new HttpClientHandler
-        //{
-        //    UseCookies = false,
-        //    UseProxy = false,
-        //    Proxy = HttpNoProxy.Instance,
-        //};
-        //var client = new HttpClient(handler);
+        //var client = CreateClient($"{TAG}_{dohAddresUri}", HttpHandlerCategory.Default);
+        var handler = new HttpClientHandler
+        {
+            UseCookies = false,
+            UseProxy = false,
+            Proxy = HttpNoProxy.Instance,
+        };
+        var client = new HttpClient(handler);
         client.BaseAddress = dohAddresUri;
         var dnsClient = new DnsHttpClient(client);
+        //暂未考虑释放问题 注意！
+        //foreach (var dc in dnsClients.Values)
+        //{
+        //    dc.Dispose();
+        //}
+        //dnsClients.Clear();
         dnsClients.TryAdd(dohAddresUri, dnsClient);
         return dnsClient;
     }

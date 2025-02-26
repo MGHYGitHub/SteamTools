@@ -2,6 +2,7 @@
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using BD.Common.Models;
+using BD.WTTS.Helpers;
 using BD.WTTS.UI.Views.Controls;
 using BD.WTTS.UI.Views.Pages;
 using FluentAvalonia.UI.Controls;
@@ -52,7 +53,7 @@ public sealed partial class GameAcceleratorService
     [Reactive]
     public DateTime? VipEndTime { get; set; }
 
-    const string VipEndTimeStringDef = "新用户免费试用 2 天";
+    const string VipEndTimeStringDef = "新用户免费试用";
 
     [Reactive]
     public string? VipEndTimeString { get; set; } = VipEndTimeStringDef;
@@ -66,7 +67,14 @@ public sealed partial class GameAcceleratorService
         DeleteMyGameCommand = ReactiveCommand.Create<XunYouGameViewModel>(DeleteMyGame);
         GameAcceleratorCommand = ReactiveCommand.CreateFromTask<XunYouGameViewModel>(GameAccelerator);
         GameLaunchCommand = ReactiveCommand.CreateFromTask<XunYouGameViewModel>(GameLaunch);
-        InstallAcceleratorCommand = ReactiveCommand.CreateFromTask(InstallAccelerator);
+        InstallAcceleratorCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            if (await IWindowManager.Instance.ShowTaskDialogAsync(new MessageBoxWindowViewModel(),
+    pageContent: new AcceleratorPathAskBox(), title: "游戏加速", isCancelButton: false, isOkButton: false))
+            {
+                await InstallAccelerator();
+            }
+        });
         UninstallAcceleratorCommand = ReactiveCommand.Create(UninstallAccelerator);
         AcceleratorChangeAreaCommand = ReactiveCommand.Create<XunYouGameViewModel>(AcceleratorChangeArea);
 
@@ -247,8 +255,13 @@ public sealed partial class GameAcceleratorService
     /// <summary>
     /// 设置加速游戏状态
     /// </summary>
-    void SetGameStatus(XunYouGameViewModel game, int areaId = 0, int serverId = 0)
+    async void SetGameStatus(XunYouGameViewModel game, int areaId = 0, int serverId = 0)
     {
+        if (!XunYouSDK.IsSupported)
+        {
+            return;
+        }
+
         if (CurrentAcceleratorGame != null && CurrentAcceleratorGame.Id == game.Id)
         {
             CurrentAcceleratorGame.IsAccelerating = false;
@@ -294,7 +307,12 @@ public sealed partial class GameAcceleratorService
         Games.AddOrUpdate(CurrentAcceleratorGame);
 
         //加速后
+        TracepointHelper.TrackEvent("AcceleratorGameSuccess");
         Toast.Show(ToastIcon.Success, "加速成功");
+        if (ProxySettings.AutoShowWattAcceleratorWindow.Value)
+        {
+            _ = ShowXunYouWindow(true);
+        }
         int testSpeedCallback(SpeedCallbackWrapper w)
         {
             if (CurrentAcceleratorGame != null)
@@ -321,6 +339,11 @@ public sealed partial class GameAcceleratorService
 
     public async Task GameAccelerator(XunYouGameViewModel app)
     {
+        if (!XunYouSDK.IsSupported)
+        {
+            return;
+        }
+
         if (app.IsAccelerating)
             return;
 
@@ -332,9 +355,16 @@ public sealed partial class GameAcceleratorService
             if (UserService.Current.User?.WattOpenId == null)
             {
                 Toast.Show(ToastIcon.Warning, "需要登录账号才能使用游戏加速功能!");
+                UserService.Current.ShowWindow();
                 app.IsAccelerating = false;
                 return;
             }
+
+            TracepointHelper.TrackEvent(nameof(GameAccelerator), new Dictionary<string, string> {
+                { "GameId", app.Id.ToString() },
+                { "GameName", app.Name ?? string.Empty },
+            });
+
             var xunYouIsInstall = await Ioc.Get<IAcceleratorService>().XY_IsInstall();
             if (xunYouIsInstall.HandleUI(out var isInstall))
             {
@@ -348,7 +378,7 @@ public sealed partial class GameAcceleratorService
                     //}
 
                     if (!await IWindowManager.Instance.ShowTaskDialogAsync(new MessageBoxWindowViewModel(),
-                        pageContent: new AcceleratorPathAskBox(), title: "未安装加速插件", isCancelButton: true))
+                        pageContent: new AcceleratorPathAskBox(), title: "游戏加速", isCancelButton: false, isOkButton: false))
                     {
                         app.IsAccelerating = false;
                         return;
@@ -583,6 +613,7 @@ public sealed partial class GameAcceleratorService
                 Toast.Show(ToastIcon.Info, "已安装Watt加速器");
                 return;
             }
+            TracepointHelper.TrackEvent("DownloadInstallAccelerator");
             var td = new TaskDialog
             {
                 Title = "下载插件",
@@ -598,49 +629,91 @@ public sealed partial class GameAcceleratorService
             };
             var install = Ioc.Get<IAcceleratorService>().XY_Install(GameAcceleratorSettings.WattAcceleratorDirPath.Value!);
 
-            td.Opened += async (s, e) =>
+            td.Opened += (s, e) =>
             {
-                await foreach (var item in install)
-                {
-                    if (item.HandleUI(out var content))
-                    {
-                        switch (content)
-                        {
-                            case < 100:
-                                Dispatcher.UIThread.Post(() => { td.Content = $"正在下载 {item.Content}%"; });
-                                td.SetProgressBarState(item.Content, TaskDialogProgressState.Normal);
-                                break;
-                            case 100:
-                                td.SetProgressBarState(item.Content, TaskDialogProgressState.Indeterminate);
-                                Dispatcher.UIThread.Post(() => { td.Content = $"下载完成，正在安装..."; });
-                                break;
-                            case (int)XunYouDownLoadCode.安装成功:
-                                //处理成功
-                                //Dispatcher.UIThread.Post(() => { td.Content = $"安装完成"; });
-                                Dispatcher.UIThread.Post(() => { td.Hide(TaskDialogStandardResult.OK); });
-                                td.Hide();
-                                break;
-                            case int n when n > 101 && n < (int)XunYouDownLoadCode.启动安装程序失败:
-                                //处理失败
-                                break;
-                            // Code 和进度重叠 递进 1000 XunYouInstallOrStartCode.默认 XunYouInstallOrStartCode.已安装
-                            case 1000:
-                                Dispatcher.UIThread.Post(() => { td.Content = $"默认"; });
-                                // XunYouInstallOrStartCode.默认
-                                break;
-                            case 1001:
-                                Dispatcher.UIThread.Post(() => { td.Content = $"已安装"; });
-                                // XunYouInstallOrStartCode.已安装
-                                Dispatcher.UIThread.Post(() => { td.Hide(TaskDialogStandardResult.OK); });
-                                break;
-                        }
-                    }
-                }
+                DownloadCallbackAsync(td, install).Wait();
+                //await foreach (var item in install)
+                //{
+                //    if (item.HandleUI(out var content))
+                //    {
+                //        switch (content)
+                //        {
+                //            case < 100:
+                //                Dispatcher.UIThread.Post(() => { td.Content = $"正在下载 {item.Content}%"; });
+                //                td.SetProgressBarState(item.Content, TaskDialogProgressState.Normal);
+                //                break;
+                //            case 100:
+                //                td.SetProgressBarState(item.Content, TaskDialogProgressState.Indeterminate);
+                //                Dispatcher.UIThread.Post(() => { td.Content = $"下载完成，正在安装..."; });
+                //                break;
+                //            case (int)XunYouDownLoadCode.安装成功:
+                //                //处理成功
+                //                //Dispatcher.UIThread.Post(() => { td.Content = $"安装完成"; });
+                //                Dispatcher.UIThread.Post(() => { td.Hide(TaskDialogStandardResult.OK); });
+                //                td.Hide();
+                //                break;
+                //            case int n when n > 101 && n < (int)XunYouDownLoadCode.启动安装程序失败:
+                //                //处理失败
+                //                break;
+                //            // Code 和进度重叠 递进 1000 XunYouInstallOrStartCode.默认 XunYouInstallOrStartCode.已安装
+                //            case 1000:
+                //                Dispatcher.UIThread.Post(() => { td.Content = $"默认"; });
+                //                // XunYouInstallOrStartCode.默认
+                //                break;
+                //            case 1001:
+                //                Dispatcher.UIThread.Post(() => { td.Content = $"已安装"; });
+                //                // XunYouInstallOrStartCode.已安装
+                //                Dispatcher.UIThread.Post(() => { td.Hide(TaskDialogStandardResult.OK); });
+                //                break;
+                //        }
+                //    }
+                //}
             };
 
             //_ = Task.Run(() => { XunYouSDK.InstallAsync(progress, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "WattAccelerator")); });
 
             var result = await td.ShowAsync(true);
+        }
+    }
+
+    private static async Task DownloadCallbackAsync(TaskDialog td, IAsyncEnumerable<ApiRsp<int>> install)
+    {
+        await foreach (var item in install)
+        {
+            if (item.HandleUI(out var content))
+            {
+                switch (content)
+                {
+                    case < 100:
+                        Dispatcher.UIThread.Post(() => { td.Content = $"正在下载 {item.Content}%"; });
+                        td.SetProgressBarState(item.Content, TaskDialogProgressState.Normal);
+                        break;
+                    case 100:
+                        td.SetProgressBarState(item.Content, TaskDialogProgressState.Indeterminate);
+                        Dispatcher.UIThread.Post(() => { td.Content = $"下载完成，正在安装..."; });
+                        break;
+                    case (int)XunYouDownLoadCode.安装成功:
+                        //处理成功
+                        //Dispatcher.UIThread.Post(() => { td.Content = $"安装完成"; });
+                        TracepointHelper.TrackEvent("DownloadInstallSuccess");
+                        Dispatcher.UIThread.Post(() => { td.Hide(TaskDialogStandardResult.OK); });
+                        td.Hide();
+                        break;
+                    case int n when n > 101 && n < (int)XunYouDownLoadCode.启动安装程序失败:
+                        //处理失败
+                        break;
+                    // Code 和进度重叠 递进 1000 XunYouInstallOrStartCode.默认 XunYouInstallOrStartCode.已安装
+                    case 1000:
+                        Dispatcher.UIThread.Post(() => { td.Content = $"默认"; });
+                        // XunYouInstallOrStartCode.默认
+                        break;
+                    case 1001:
+                        Dispatcher.UIThread.Post(() => { td.Content = $"已安装"; });
+                        // XunYouInstallOrStartCode.已安装
+                        Dispatcher.UIThread.Post(() => { td.Hide(TaskDialogStandardResult.OK); });
+                        break;
+                }
+            }
         }
     }
 
@@ -745,5 +818,15 @@ public sealed partial class GameAcceleratorService
                 Toast.Show(ToastIcon.Error, $"启动 {app.Name} 失败");
             }
         }
+    }
+
+    public async Task ShowXunYouWindow(bool showHide)
+    {
+        //if (UserService.Current.User?.WattOpenId != null)
+        //    await Ioc.Get<IAcceleratorService>().XY_StartEx2(
+        //                            UserService.Current.User.WattOpenId,
+        //                            UserService.Current.User.NickName, 0, 0, 0);
+
+        var result = await Ioc.Get<IAcceleratorService>().XY_ShowWinodw(showHide);
     }
 }

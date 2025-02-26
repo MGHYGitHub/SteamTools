@@ -24,7 +24,7 @@ public sealed class Plugin : PluginBase<Plugin>, IPlugin
 
     protected sealed override string? AuthorOriginalString => null;
 
-    public sealed override string Description => moduleName;
+    public sealed override string Description => moduleName + " 控制台功能实现";
 
     public sealed override object? Icon => Resources.asf;
 
@@ -112,5 +112,23 @@ public sealed class Plugin : PluginBase<Plugin>, IPlugin
     public override IEnumerable<(Action<IServiceCollection>? @delegate, bool isInvalid, string name)>? GetConfiguration(bool directoryExists)
     {
         yield return GetConfiguration<ASFSettings_>(directoryExists);
+    }
+
+    public override async ValueTask OnExit()
+    {
+        if (ArchiSteamFarmServiceImpl.ASFProcessId.HasValue)
+        {
+            try
+            {
+                var process = Process.GetProcessById(ArchiSteamFarmServiceImpl.ASFProcessId.Value);
+                process.Kill();
+                process.Dispose();
+            }
+            catch (ArgumentException)
+            {
+                // 进程已经退出
+            }
+        }
+        await base.OnExit();
     }
 }

@@ -1,5 +1,6 @@
+using BD.WTTS.Helpers;
+using System.Runtime.Devices;
 using static BD.WTTS.Services.IMicroServiceClient;
-using AppResources = BD.WTTS.Client.Resources.Strings;
 
 // ReSharper disable once CheckNamespace
 namespace BD.WTTS.Services;
@@ -18,6 +19,8 @@ public sealed class NoticeService : ReactiveObject
     [Reactive]
     public int UnreadNotificationsCount { get; set; }
 
+    private Timer _timer;
+
     //[Reactive]
     //public ObservableCollection<NoticeGroupDTO> NoticeTypes { get; set; }
 
@@ -26,6 +29,12 @@ public sealed class NoticeService : ReactiveObject
     public NoticeService()
     {
         Notices = new ObservableCollection<OfficialMessageItemDTO>();
+
+        _timer = new Timer(_ =>
+        {
+            GetNewsAsync().Wait();
+        }, null, TimeSpan.FromHours(2), TimeSpan.FromHours(2));
+
         //NoticesSource = new(x => x.Id);
         //NoticeTypes = new();
     }
@@ -53,7 +62,6 @@ public sealed class NoticeService : ReactiveObject
                 if (item.PushTime > GeneralSettings.LastLookNoticeDateTime.Value)
                 {
                     item.Unread = true;
-
                     UnreadNotificationsCount++;
                 }
             }
@@ -68,15 +76,26 @@ public sealed class NoticeService : ReactiveObject
                 //}
                 var notice = Notices.First(x => x.Unread == true);
                 INotificationService.Instance.Notify(notice.Content, NotificationType.Announcement, title: notice.Title);
+                GeneralSettings.LastLookNoticeDateTime.Value = DateTimeOffset.Now;
             }
         }
     }
 
     public void MarkNotificationsHasRead()
     {
+        TracepointHelper.TrackEvent(nameof(MarkNotificationsHasRead));
         GeneralSettings.LastLookNoticeDateTime.Value = DateTimeOffset.Now;
         VerifyNotificationsHasRead();
     }
+
+#if DEBUG
+
+    public void ClrearLastLookNoticeDateTime()
+    {
+        GeneralSettings.LastLookNoticeDateTime.Value = default;
+    }
+
+#endif
 
     //    public async Task GetNewsAsync()
     //    {

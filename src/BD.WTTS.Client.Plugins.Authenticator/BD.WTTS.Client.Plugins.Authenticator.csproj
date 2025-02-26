@@ -63,10 +63,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!--<PackageReference Include="Avalonia" />
-		<PackageReference Include="BD.Common.XmlnsDefinition.Avalonia">
-			<Aliases>BD_Common_XmlnsDefinition_Avalonia</Aliases>
-		</PackageReference>-->
 		<PackageReference Include="ReactiveUI.Fody" />
 	</ItemGroup>
 
@@ -89,6 +85,9 @@
 	    <DesignTime>True</DesignTime>
 	    <AutoGen>True</AutoGen>
 	    <DependentUpon>Resources.resx</DependentUpon>
+	  </Compile>
+	  <Compile Update="UI\Views\Pages\JoinSteamAuthenticatorPage.axaml.cs">
+	    <DependentUpon>JoinSteamAuthenticatorPage.axaml</DependentUpon>
 	  </Compile>
 	</ItemGroup>
 

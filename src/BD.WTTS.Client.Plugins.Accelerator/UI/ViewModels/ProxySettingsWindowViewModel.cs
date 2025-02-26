@@ -11,10 +11,10 @@ public sealed class ProxySettingsWindowViewModel : WindowViewModel
         Title = DisplayName;
     }
 
-    public IEnumerable<ExternalProxyType> ProxyTypes { get; }
-        = Enum2.GetAll<ExternalProxyType>();
+    //public IEnumerable<ExternalProxyType> ProxyTypes { get; }
+    //    = Enum2.GetAll<ExternalProxyType>();
 
-    public IEnumerable<string> ProxyDNSs { get; } = new[]
+    public static IEnumerable<string> ProxyDNSs { get; } = new[]
     {
         "System Default",
         PrimaryDNS_114,
@@ -31,7 +31,7 @@ public sealed class ProxySettingsWindowViewModel : WindowViewModel
             "127.0.0.1",
         };
 
-    public IEnumerable<string> DohAddress { get; }
+    public static IEnumerable<string> DohAddress { get; }
         = new[] {
             Dnspod_DohAddres,
             Dnspod_DohAddres2,
@@ -44,4 +44,22 @@ public sealed class ProxySettingsWindowViewModel : WindowViewModel
             DohAddres_360,
             TUNA_DohAddres,
         };
+
+    public void ResetSettings()
+    {
+        // 更改多个设置项不立即保存
+        ProxySettings.SystemProxyIp.Reset(save: false);
+        ProxySettings.ProxyMasterDns.Reset(save: false);
+        ProxySettings.SystemProxyPortId.Reset(save: false);
+        ProxySettings.ProgramStartupRunProxy.Reset(save: false);
+        ProxySettings.EnableHttpProxyToHttps.Reset(save: false);
+        ProxySettings.UseDoh.Reset(save: false);
+        ProxySettings.CustomDohAddres2.Reset(save: false);
+        ProxySettings.OnlyEnableProxyScript.Reset(save: false);
+
+        // 更改完成后保存一次
+        ProxySettings.OnlyEnableProxyScript.Save();
+
+        Toast.Show(ToastIcon.Success, "重置成功");
+    }
 }

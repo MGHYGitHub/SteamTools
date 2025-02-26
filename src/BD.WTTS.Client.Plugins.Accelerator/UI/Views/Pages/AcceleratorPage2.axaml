@@ -6,13 +6,15 @@
     xmlns:enum="using:BD.WTTS.Enums"
     xmlns:i="using:Avalonia.Xaml.Interactivity"
     xmlns:ia="using:Avalonia.Xaml.Interactions.Core"
+    xmlns:ir="using:Avalonia.Xaml.Interactions.Responsive"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ms="https://steampp.net/settings"
     xmlns:s="https://steampp.net/services"
     xmlns:spp="https://steampp.net/ui"
+    xmlns:sys="using:System"
     xmlns:ui="using:FluentAvalonia.UI.Controls"
     Title="{Binding Name, Source={x:Static s:Plugin.Instance}, Mode=OneWay}"
-    d:DesignHeight="450"
+    d:DesignHeight="650"
     d:DesignWidth="800"
     x:CompileBindings="True"
     x:DataType="spp:AcceleratorPageViewModel"
@@ -236,28 +238,7 @@
                 </TabStrip.ItemTemplate>
             </TabStrip>
 
-            <DockPanel>
-                <TextBlock Text="{x:Static spp:Strings.CommunityFix_MenuName}" Theme="{StaticResource BodyStrongTextBlockStyle}" />
-
-                <TextBlock
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Classes.NotSupport="{Binding Source={x:Static s:ProxyService.Current}, Path=IPv6AddresString, Mode=OneWay, Converter={StaticResource IsNullConverter}}"
-                    Classes.Support="{Binding Source={x:Static s:ProxyService.Current}, Path=IPv6AddresString, Mode=OneWay, Converter={StaticResource IsNullConverter}, ConverterParameter=invert}"
-                    Theme="{StaticResource CaptionTextBlockStyle}"
-                    ToolTip.Tip="{Binding Source={x:Static s:ProxyService.Current}, Path=IPv6AddresString, Mode=OneWay}">
-                    <TextBlock.Styles>
-                        <Style Selector="TextBlock.Support">
-                            <Setter Property="Text" Value="已支持 IPv6 访问" />
-                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
-                        </Style>
-                        <Style Selector="TextBlock.NotSupport">
-                            <Setter Property="Text" Value="不支持 IPv6 访问" />
-                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
-                        </Style>
-                    </TextBlock.Styles>
-                </TextBlock>
-            </DockPanel>
+            <TextBlock Text="{x:Static spp:Strings.CommunityFix_MenuName}" Theme="{StaticResource BodyStrongTextBlockStyle}" />
 
             <ToggleSwitch
                 VerticalAlignment="Center"
@@ -304,37 +285,59 @@
 
             <Separator Margin="0,8" Classes="Horizontal" />
 
-            <Button
-                HorizontalAlignment="Stretch"
-                Command="{Binding SetupCertificateCommand}"
-                Content="{x:Static spp:Strings.CommunityFix_SetupCertificate}" />
-            <Button
-                HorizontalAlignment="Stretch"
-                Command="{Binding DeleteCertificateCommand}"
-                Content="{x:Static spp:Strings.CommunityFix_DeleteCertificate}" />
-            <Button
-                HorizontalAlignment="Stretch"
-                Command="{Binding ShowCertificateCommand}"
-                Content="查看证书信息" />
-            <Button
-                HorizontalAlignment="Stretch"
-                Command="{Binding OpenCertificateDirCommand}"
-                Content="{x:Static spp:Strings.CommunityFix_OpenCertificateDir}" />
+            <ItemsControl>
+                <ItemsControl.Items>
+                    <Button
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding SetupCertificateCommand}"
+                        Content="{x:Static spp:Strings.CommunityFix_SetupCertificate}" />
+                    <Button
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding DeleteCertificateCommand}"
+                        Content="{x:Static spp:Strings.CommunityFix_DeleteCertificate}" />
+                    <Button
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding ShowCertificateCommand}"
+                        Content="查看证书信息" />
+                    <Button
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding OpenCertificateDirCommand}"
+                        Content="{x:Static spp:Strings.CommunityFix_OpenCertificateDir}" />
+                </ItemsControl.Items>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <spp:FixedWrapPanel ItemsPerLine="2" Spacing="5" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
 
             <Separator Margin="0,8" Classes="Horizontal" />
 
-            <Button
-                HorizontalAlignment="Stretch"
-                Command="{Binding EditHostsFileCommand}"
-                Content="{x:Static spp:Strings.CommunityFix_EditHostsFile}" />
-            <Button
-                HorizontalAlignment="Stretch"
-                Command="{Binding ResetHostsFileCommand}"
-                Content="{x:Static spp:Strings.CommunityFix_ResetHostsFile}" />
-            <Button
-                HorizontalAlignment="Stretch"
-                Command="{Binding OpenHostsDirCommand}"
-                Content="{x:Static spp:Strings.CommunityFix_OpenHostsDir}" />
+            <ItemsControl>
+                <ItemsControl.Items>
+                    <Button
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding EditHostsFileCommand}"
+                        Content="{x:Static spp:Strings.CommunityFix_EditHostsFile}" />
+                    <Button
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding ResetHostsFileCommand}"
+                        Content="{x:Static spp:Strings.CommunityFix_ResetHostsFile}" />
+                    <Button
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding OpenHostsDirCommand}"
+                        Content="{x:Static spp:Strings.CommunityFix_OpenHostsDir}" />
+                    <Button
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding OpenLogFileCommand}"
+                        Content="打开加速日志文件夹" />
+                </ItemsControl.Items>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <spp:FixedWrapPanel ItemsPerLine="2" Spacing="5" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
 
             <!--<ui:FAComboBox ItemsSource="{Binding Source={x:Static ms:ProxySettings.ProxyModes}, Path=., Mode=OneWay}" SelectedItem="{Binding Source={x:Static ms:ProxySettings.ProxyMode}, Path=Value, Mode=TwoWay}">
                 <ui:FAComboBox.ItemTemplate>
@@ -344,9 +347,19 @@
                 </ui:FAComboBox.ItemTemplate>
             </ui:FAComboBox>-->
 
-            <Separator Margin="0,8" Classes="Horizontal" />
+            <StackPanel IsVisible="{x:Static spp:XunYouSDK.IsSupported}}" Spacing="10">
+                <Separator Margin="0,8" Classes="Horizontal" />
 
-            <!--<TextBlock Text="{x:Static spp:Strings.GameAccelerator_WattAcceleratorInstallPath}" Theme="{StaticResource BodyStrongTextBlockStyle}" />
+                <TextBlock Text="Watt 加速器相关" Theme="{StaticResource BodyStrongTextBlockStyle}" />
+
+                <ToggleSwitch
+                    VerticalAlignment="Center"
+                    Classes="NoContent"
+                    IsChecked="{Binding Source={x:Static ms:ProxySettings.AutoShowWattAcceleratorWindow}, Path=Value, Mode=TwoWay}"
+                    OffContent="{x:Static spp:Strings.GameAccelerator_SetShowWattWindow}"
+                    OnContent="{x:Static spp:Strings.GameAccelerator_SetShowWattWindow}" />
+
+                <!--<TextBlock Text="{x:Static spp:Strings.GameAccelerator_WattAcceleratorInstallPath}" Theme="{StaticResource BodyStrongTextBlockStyle}" />
 
             <ui:SettingsExpander Description="{Binding Source={x:Static ms:GameAcceleratorSettings.WattAcceleratorDirPath}, Path=Value, Mode=OneWay}}" IsExpanded="True">
                 <ui:SettingsExpander.IconSource>
@@ -359,74 +372,127 @@
                     <Button Content="打开文件夹" />
                     <Button Content="选择路径" />
                 </StackPanel>
-
             </ui:SettingsExpander>-->
 
-            <Button
-                HorizontalAlignment="Stretch"
-                Command="{Binding InstallAcceleratorCommand, Source={x:Static s:GameAcceleratorService.Current}}"
-                Content="{x:Static spp:Strings.GameAccelerator_InstallWattAccelerator}" />
-            <Button
-                HorizontalAlignment="Stretch"
-                Command="{Binding UninstallAcceleratorCommand, Source={x:Static s:GameAcceleratorService.Current}}"
-                Content="{x:Static spp:Strings.GameAccelerator_UninstallWattAccelerator}" />
+                <!--<ItemsControl>
+                    <ItemsControl.Items>
+					</ItemsControl.Items>
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<spp:FixedWrapPanel ItemsPerLine="2" Spacing="5" />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+				</ItemsControl>-->
+
+                <Button
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding ShowXunYouWindow, Source={x:Static s:GameAcceleratorService.Current}}"
+                    CommandParameter="True"
+                    Content="{x:Static spp:Strings.GameAccelerator_ShowWattAccelerator}" />
+                <Button
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding InstallAcceleratorCommand, Source={x:Static s:GameAcceleratorService.Current}}"
+                    Content="{x:Static spp:Strings.GameAccelerator_InstallWattAccelerator}" />
+                <Button
+                    HorizontalAlignment="Stretch"
+                    Command="{Binding UninstallAcceleratorCommand, Source={x:Static s:GameAcceleratorService.Current}}"
+                    Content="{x:Static spp:Strings.GameAccelerator_UninstallWattAccelerator}" />
+
+            </StackPanel>
         </StackPanel>
     </spp:PageBase.PaneContent>
-    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,*">
+    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,*">
+        <Grid.Resources>
+            <sys:Double x:Key="AdaptiveWidth">900</sys:Double>
+        </Grid.Resources>
+        <Grid.Styles>
+            <Style Selector="StackPanel.small">
+                <Setter Property="Grid.Row" Value="1" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+            </Style>
+            <Style Selector="StackPanel.wide">
+                <Setter Property="Grid.Row" Value="0" />
+                <Setter Property="HorizontalAlignment" Value="Right" />
+            </Style>
+
+            <Style Selector="TabStrip.small">
+                <Setter Property="Grid.ColumnSpan" Value="2" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+            </Style>
+            <Style Selector="TabStrip.wide">
+                <Setter Property="HorizontalAlignment" Value="Left" />
+            </Style>
+        </Grid.Styles>
         <TabStrip
             x:Name="AcceleratorTabs"
             VerticalAlignment="Top"
             ItemContainerTheme="{StaticResource TabItemStyle}"
             Theme="{StaticResource TabStripStyle}">
+            <i:Interaction.Behaviors>
+                <spp:AdaptiveBehavior SourceControl="{Binding $parent[TopLevel]}">
+                    <ir:AdaptiveClassSetter
+                        MinWidth="0"
+                        MaxWidth="{StaticResource AdaptiveWidth}"
+                        ClassName="small" />
+                    <ir:AdaptiveClassSetter
+                        MinWidth="{StaticResource AdaptiveWidth}"
+                        MaxWidth="Infinity"
+                        ClassName="wide" />
+                </spp:AdaptiveBehavior>
+            </i:Interaction.Behaviors>
             <TabStripItem Content="平台加速" IsVisible="{Binding Source={x:Static s:ProxyService.Current}, Path=!ProxyStatus, Mode=OneWay}">
-                <WrapPanel>
-                    <TextBlock Text="平台加速" />
-                    <Border
+                <!--<WrapPanel>-->
+                <TextBlock Text="平台加速" />
+                <!--<Border
                         Margin="5,0,0,0"
                         Padding="5,1"
                         VerticalAlignment="Center"
                         CornerRadius="2">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                                <GradientStop Offset="0.0" Color="#48C6EF" />
-                                <GradientStop Offset="1.0" Color="#6F86D6" />
-                            </LinearGradientBrush>
-                        </Border.Background>
-                        <TextBlock
+						<Border.Background>
+							<LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+								<GradientStop Offset="0.0" Color="#48C6EF" />
+								<GradientStop Offset="1.0" Color="#6F86D6" />
+							</LinearGradientBrush>
+						</Border.Background>
+						<TextBlock
                             VerticalAlignment="Center"
                             FontSize="10"
                             Foreground="White"
                             Text="免费" />
                     </Border>
-                </WrapPanel>
+                </WrapPanel>-->
             </TabStripItem>
-            <TabStripItem Content="{x:Static spp:Strings.CommunityFix_FlowStatistics}" IsVisible="{Binding Source={x:Static s:ProxyService.Current}, Path=ProxyStatus, Mode=OneWay}" />
             <TabStripItem Content="{x:Static spp:Strings.CommunityFix_Services}" IsVisible="{Binding Source={x:Static s:ProxyService.Current}, Path=ProxyStatus, Mode=OneWay}" />
+            <TabStripItem Content="加速脚本" IsVisible="{Binding Source={x:Static s:ProxyService.Current}, Path=IsAnyProxyScripts, Mode=OneWay}" />
+            <TabStripItem Content="{x:Static spp:Strings.CommunityFix_ProxyLog}" IsVisible="{Binding Source={x:Static s:ProxyService.Current}, Path=ProxyStatus, Mode=OneWay}" />
+            <TabStripItem Content="{x:Static spp:Strings.CommunityFix_FlowStatistics}" IsVisible="{Binding Source={x:Static s:ProxyService.Current}, Path=ProxyStatus, Mode=OneWay}" />
             <TabStripItem Name="GameAccTab">
-                <WrapPanel>
-                    <TextBlock Text="游戏加速" />
-                    <Border
+                <!--<WrapPanel>-->
+                <TextBlock Text="游戏加速" />
+                <!--<Border
                         Margin="5,0,0,0"
                         Padding="5,1"
                         VerticalAlignment="Center"
                         CornerRadius="2">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                                <GradientStop Offset="0.0" Color="#EEAD92" />
-                                <GradientStop Offset="1.0" Color="#6018DC" />
-                            </LinearGradientBrush>
-                        </Border.Background>
-                        <TextBlock
+						<Border.Background>
+							<LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+								<GradientStop Offset="0.0" Color="#EEAD92" />
+								<GradientStop Offset="1.0" Color="#6018DC" />
+							</LinearGradientBrush>
+						</Border.Background>
+						<TextBlock
                             VerticalAlignment="Center"
                             FontSize="10"
                             Foreground="White"
                             Text="收费" />
-                    </Border>
-                </WrapPanel>
+                    </Border>-->
+                <!--</WrapPanel>-->
             </TabStripItem>
+            <TabStripItem Content="网络检测" IsVisible="True" />
+            <TabStripItem Content="dummy_tab_for_transisit_animation" IsVisible="False" />
         </TabStrip>
         <Carousel
-            Grid.Row="1"
+            Grid.Row="2"
             Margin="0,10,0,0"
             Classes="AnimeSlide"
             SelectedIndex="{Binding #AcceleratorTabs.SelectedIndex}">
@@ -509,66 +575,17 @@
                 </spp:ContentLoader>
             </ScrollViewer>
 
+            <!--  加速服务  -->
+            <spp:AcceleratorServiceStatus />
+
+            <!--  加速脚本  -->
+            <spp:ProxyServiceStatus />
+
+            <!--  加速日志  -->
+            <spp:ProxyLog Margin="5,0" />
+
             <!--  流量统计  -->
             <spp:ProxyChartView Margin="5,0" />
-
-            <!--  加速服务  -->
-            <Grid Margin="0,0,10,0" ColumnDefinitions="*,20,*">
-                <Border
-                    Grid.Column="0"
-                    Padding="10"
-                    Classes="paper">
-                    <DockPanel>
-                        <TextBlock
-                            Margin="0,0,0,10"
-                            DockPanel.Dock="Top"
-                            FontSize="16"
-                            Text="{x:Static spp:Strings.CommunityFix_AccelerationsEnable}" />
-                        <ScrollViewer>
-                            <ItemsControl ItemsSource="{Binding EnableProxyDomains, Source={x:Static s:ProxyService.Current}}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type spp:AccelerateProjectDTO}">
-                                        <StackPanel Margin="10">
-                                            <DockPanel>
-                                                <TextBlock Text="{Binding Name}" />
-                                            </DockPanel>
-                                            <Separator Classes="Separator" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                    </DockPanel>
-                </Border>
-
-                <Border
-                    Grid.Column="2"
-                    Padding="10"
-                    Classes="paper">
-                    <DockPanel>
-                        <TextBlock
-                            Margin="0,0,0,10"
-                            DockPanel.Dock="Top"
-                            FontSize="16"
-                            Text="{x:Static spp:Strings.CommunityFix_ScriptsEnable}" />
-                        <ScrollViewer>
-                            <ItemsControl ItemsSource="{Binding EnableProxyScripts^, Source={x:Static s:ProxyService.Current}}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type spp:ScriptDTO}">
-                                        <StackPanel Margin="10">
-                                            <DockPanel>
-                                                <TextBlock Text="{Binding Name}" />
-                                            </DockPanel>
-                                            <Separator Classes="Separator" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                    </DockPanel>
-                </Border>
-            </Grid>
-
 
             <!--  游戏加速  -->
             <Panel x:DataType="spp:GameAcceleratorPageViewModel">
@@ -630,20 +647,31 @@
                     IsVisible="{Binding Source={x:Static s:GameAcceleratorService.Current}, Path=CurrentAcceleratorGame.IsAccelerated}" />
             </Panel>
 
-            <!--<TabItem Header="加速日志">
+            <!--  网络检测  -->
+            <spp:NetworkCheck DataContext="{Binding NetworkCheckControlViewModel}" />
 
-					    </TabItem>-->
-            <!--<TabItem Header="AD">
-					
-						</TabItem>-->
+            <TabItem Content="dummy_tab_for_transisit_animation" />
         </Carousel>
 
+        <!--  Side tab of paid game spped up  -->
         <StackPanel
             Grid.ColumnSpan="2"
-            HorizontalAlignment="Right"
             IsVisible="{Binding #GameAccTab.IsSelected}"
             Orientation="Horizontal"
             Spacing="5">
+
+            <i:Interaction.Behaviors>
+                <spp:AdaptiveBehavior SourceControl="{Binding $parent[TopLevel]}">
+                    <ir:AdaptiveClassSetter
+                        MinWidth="0"
+                        MaxWidth="{StaticResource AdaptiveWidth}"
+                        ClassName="small" />
+                    <ir:AdaptiveClassSetter
+                        MinWidth="{StaticResource AdaptiveWidth}"
+                        MaxWidth="Infinity"
+                        ClassName="wide" />
+                </spp:AdaptiveBehavior>
+            </i:Interaction.Behaviors>
             <Border
                 Padding="5,1"
                 VerticalAlignment="Center"
@@ -715,14 +743,26 @@
             </AutoCompleteBox>
         </StackPanel>
 
-
+        <!--  Side tab after speed up  -->
         <StackPanel
             Grid.ColumnSpan="2"
-            HorizontalAlignment="Right"
             VerticalAlignment="Center"
             IsVisible="{Binding Source={x:Static s:ProxyService.Current}, Path=ProxyStatus, Mode=OneWay}"
             Orientation="Horizontal"
             Spacing="8">
+
+            <i:Interaction.Behaviors>
+                <spp:AdaptiveBehavior SourceControl="{Binding $parent[TopLevel]}">
+                    <ir:AdaptiveClassSetter
+                        MinWidth="0"
+                        MaxWidth="{StaticResource AdaptiveWidth}"
+                        ClassName="small" />
+                    <ir:AdaptiveClassSetter
+                        MinWidth="{StaticResource AdaptiveWidth}"
+                        MaxWidth="Infinity"
+                        ClassName="wide" />
+                </spp:AdaptiveBehavior>
+            </i:Interaction.Behaviors>
             <StackPanel.IsVisible>
                 <MultiBinding Converter="{x:Static BoolConverters.And}">
                     <CompiledBinding
@@ -737,7 +777,7 @@
                     <Setter Property="VerticalAlignment" Value="Center" />
                 </Style>
             </StackPanel.Styles>
-            <Button Theme="{StaticResource TransparentButton}">
+            <Button Theme="{StaticResource TransparentButton}" ToolTip.ShowDelay="0">
                 <ToolTip.Tip>
                     <TextBlock>
                         <Run FontSize="16" Text="Q：为什么加速后流量一直显示 0KB ？" />
@@ -745,12 +785,20 @@
                         <Run Text="A：流量统计图表是用于查看实时流量数据信息，您需要先访问对应的网站，这边才会有相应的流量波动数据，请检查是否已经选择了对应的网站加速项目，如果确定有正常勾选加速项目并且访问网站依然无流量，则可能是加速的监听服务没有启用成功，尝试更换加速模式。" />
                         <LineBreak />
                         <LineBreak />
-                        <Run FontSize="16" Text="Q：加速后对应网站打不开显示SSL错误或者Steam浏览器显示-100错误？" />
+                        <Run FontSize="16" Text="Q：加速后对应网站打不开显示 SSL 错误或者 Steam 浏览器显示 -100 错误？" />
                         <LineBreak />
-                        <Run Text="A：可以尝试执行以下操作进行修复，关闭加速，点击加速设置-移除证书再安装证书，重开加速。或者加速设置-代理设置-尝试更换doh地址或者关闭doh使用dns等方案。" />
+                        <Run Text="A：可以尝试执行以下操作进行修复，关闭加速，点击加速设置-移除证书再安装证书，重开加速。或者加速设置 - 代理设置- 尝试更换 doh 地址或者关闭 doh 使用 dns 等方案。" />
+                        <LineBreak />
+                        <LineBreak />
+                        <Run FontSize="16" Text="Q：为什么加速经常不可用？还要自己去改设置或重新安装证书？" />
+                        <LineBreak />
+                        <Run Text="A：Steam++ 的加速与游戏加速器的加速功能不同，加速是完全运行于你电脑本地的，所以会受到你电脑本地网络环境，系统环境各种因素影响，也正因如此才有这么多加速相关的选项，请合理根据情况适进行测试以及更改对应的选项以便加速能正常使用。" />
                     </TextBlock>
                 </ToolTip.Tip>
-                <ui:FontIcon FontSize="22" Glyph="&#xE82F;" />
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                    <ui:FontIcon FontSize="20" Glyph="&#xE82F;" />
+                    <TextBlock Text="加速不能用?" />
+                </StackPanel>
             </Button>
             <TextBlock Text="{x:Static spp:Strings.CommunityFix_ProxyMode}" />
             <TextBlock Text="{Binding Source={x:Static ms:ProxySettings.ProxyMode}, Path=Value, Mode=OneWay, Converter={StaticResource EnumLocalizationNameConverter}}" />
@@ -760,7 +808,7 @@
         </StackPanel>
 
         <spp:AdControl
-            Grid.Row="1"
+            Grid.Row="2"
             Grid.Column="1"
             Width="165"
             Height="390"

@@ -44,16 +44,21 @@ sealed class AvaloniaToastServiceImpl : IToastService
         if (NotificationManager == null)
         {
             var host = AvaloniaWindowManagerImpl.GetWindowTopLevel();
-
-            NotificationManager = new SnackbarManager(host)
+            if (host != null)
             {
-                Position = NotificationPosition.BottomRight,
-                MaxItems = 5,
-            };
+                NotificationManager = new SnackbarManager(host)
+                {
+                    Position = NotificationPosition.BottomRight,
+                    MaxItems = 5,
+                };
+            }
         }
 
-        var notificationType = GetNotificationType(icon);
-        NotificationManager.Show(text, notificationType: notificationType);
+        if (NotificationManager != null)
+        {
+            var notificationType = GetNotificationType(icon);
+            NotificationManager.Show(text, notificationType: notificationType);
+        }
     }
 
     /// <inheritdoc cref="Show(string, int?)"/>

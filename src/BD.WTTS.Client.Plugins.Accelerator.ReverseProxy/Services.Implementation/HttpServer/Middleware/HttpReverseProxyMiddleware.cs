@@ -1,5 +1,6 @@
 // https://github.com/dotnetcore/FastGithub/blob/2.1.4/FastGithub.HttpServer/HttpReverseProxyMiddleware.cs
 
+using Microsoft.AspNetCore.Http;
 using Yarp.ReverseProxy.Forwarder;
 
 // ReSharper disable once CheckNamespace
@@ -38,6 +39,7 @@ sealed partial class HttpReverseProxyMiddleware
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         var url = context.Request.GetDisplayUrl();
+        //var url = context.Request.GetDisplayUrl().Remove(0, context.Request.Scheme.Length + 3);
 
         var isScriptInject = reverseProxyConfig.TryGetScriptConfig(url, out var scriptConfigs);
 
@@ -50,9 +52,31 @@ sealed partial class HttpReverseProxyMiddleware
             context.Response.Body = memoryStream;
         }
 
-        if (TryGetDomainConfig(url, out var domainConfig) == false)
+        if (TryGetDomainConfig(url.Remove(0, context.Request.Scheme.Length + 3), out var domainConfig) == false)
         {
-            await next(context);
+            if (reverseProxyConfig.Service.TwoLevelAgentEnable)
+            {
+                var httpClient = httpClientFactory.CreateHttpClient("GlobalProxy", defaultDomainConfig);
+                var destinationPrefix = GetDestinationPrefix(context.Request.Scheme, context.Request.Host, null);
+                var forwarderRequestConfig = new ForwarderRequestConfig()
+                {
+                    Version = context.Request.Protocol switch
+                    {
+                        var protocol when protocol.StartsWith("HTTP/2") => System.Net.HttpVersion.Version20,
+                        var protocol when protocol.StartsWith("HTTP/3") => System.Net.HttpVersion.Version30,
+                        _ => System.Net.HttpVersion.Version11,
+                    },
+                };
+                var error = await httpForwarder.SendAsync(context, destinationPrefix, httpClient, forwarderRequestConfig, HttpTransformer.Empty);
+                if (error != ForwarderError.None)
+                {
+                    await HandleErrorAsync(context, error);
+                }
+            }
+            else
+            {
+                await next(context);
+            }
             return;
         }
 
@@ -60,7 +84,7 @@ sealed partial class HttpReverseProxyMiddleware
             !reverseProxyConfig.Service.OnlyEnableProxyScript)
         {
             // 部分运营商将奇怪的域名解析到 127.0.0.1 再此排除这些不支持的代理域名
-            var ip = await reverseProxyConfig.DnsAnalysis.AnalysisDomainIpAsync(context.Request.Host.Value, IDnsAnalysisService.DNS_Dnspods).FirstOrDefaultAsync();
+            var ip = await reverseProxyConfig.DnsAnalysis.AnalysisDomainIpAsync(context.Request.Host.Value!, IDnsAnalysisService.DNS_Dnspods).FirstOrDefaultAsync();
             if (ip == null || IPAddress.IsLoopback(ip))
             {
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
@@ -158,7 +182,7 @@ sealed partial class HttpReverseProxyMiddleware
             return true;
         }
 
-        var host = new Uri(uri).Host;
+        var host = new UriBuilder(uri).Host;
         // 未配置的域名，但仍然被解析到本机 IP 的域名
         if (IsDomain(host))
         {

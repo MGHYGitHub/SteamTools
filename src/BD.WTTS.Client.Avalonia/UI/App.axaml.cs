@@ -13,8 +13,16 @@ public sealed partial class App : Application
 
     public App()
     {
+        Name = AssemblyInfo.Trademark;
         OpenBrowserCommand = ReactiveCommand.Create<object?>(OpenBrowserCommandCore);
         CopyToClipboardCommand = ReactiveCommand.Create<object?>(CopyToClipboardCommandCore);
+#if MACOS
+        var menus = new NativeMenu();
+        menus.Add(new NativeMenuItem { Header = Strings.Settings, Command = ReactiveCommand.Create(() => { INavigationService.Instance.Navigate(typeof(SettingsPage)); }) });
+        menus.Add(new NativeMenuItemSeparator());
+        menus.Add(new NativeMenuItem { Header = Strings.Exit, Command = ReactiveCommand.Create(() => { Shutdown(); }) });
+        NativeMenu.SetMenu(this, menus);
+#endif
     }
 
     /// <summary>
@@ -76,7 +84,7 @@ public sealed partial class App : Application
                     Log.Error(nameof(Steamworks), ex, "Steamworks.SteamClient Init");
                 }
             }
-#endif 
+#endif
         }
         catch (Exception ex)
         {
@@ -111,6 +119,12 @@ public sealed partial class App : Application
             {
                 Task2.InBackground(() => appWindow.SplashScreen?.RunTasks(CancellationToken.None));
             }
+
+            IPlatformService.Instance.SetSystemSessionEnding(() =>
+            {
+                Log.Info("System Shutdown", "Application SafeExit...");
+                Shutdown();
+            });
         }
         else if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
         {
@@ -246,8 +260,8 @@ public sealed partial class App : Application
             try
             {
                 Uri uri = new(urlString);
-                if (uri.Host.EndsWith("steampp.net", StringComparison.OrdinalIgnoreCase) ||
-                    uri.Host.EndsWith("mossimo.net", StringComparison.OrdinalIgnoreCase))
+                if (uri.Host.EndsWith(Constants.Urls.OfficialWebsiteHost, StringComparison.OrdinalIgnoreCase) &&
+                    uri.Query.EndsWith(Constants.Urls.Komaasharu_IsAuthQuery, StringComparison.OrdinalIgnoreCase))
                 {
                     await UserService.Current.OpenAuthUrl(urlString);
                     return;

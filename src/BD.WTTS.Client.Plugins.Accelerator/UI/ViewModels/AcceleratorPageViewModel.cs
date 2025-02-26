@@ -1,12 +1,12 @@
-using AppResources = BD.WTTS.Client.Resources.Strings;
-
-using BD.WTTS.Client.Resources;
 using BD.WTTS.UI.Views.Pages;
+using AppResources = BD.WTTS.Client.Resources.Strings;
 
 namespace BD.WTTS.UI.ViewModels;
 
 public sealed partial class AcceleratorPageViewModel
 {
+    public NetworkCheckControlViewModel NetworkCheckControlViewModel { get; } = new();
+
     DateTime _initializeTime;
     readonly IHostsFileService? hostsFileService;
     readonly IPlatformService platformService = IPlatformService.Instance;
@@ -15,6 +15,31 @@ public sealed partial class AcceleratorPageViewModel
 
     public AcceleratorPageViewModel()
     {
+        ProxyService.Current.WhenValueChanged(x => x.ProxyStatus)
+            .Where(x => x == true)
+            .Subscribe(_ =>
+            {
+                // Create new ProxyEnableDomain for 加速服务 page
+                var enableGroupDomain = ProxyService.Current.ProxyDomainsList
+                    .Where(list => list.ThreeStateEnable == true || list.ThreeStateEnable == null)
+                    .Select(list => new ProxyDomainGroupViewModel
+                    {
+                        Name = list.Name,
+                        IconUrl = list.IconUrl ?? string.Empty,
+                        EnableProxyDomainVMs = new(
+                            list.Items!
+                                .Where(i => i.ThreeStateEnable == true)
+                                .Select(i => new ProxyDomainViewModel(i.Name, i.ProxyType, "https://" + i.ListenDomainNames.Split(";")[0],
+                                                                    i.Items?
+                                                                        .Select(c => new ProxyDomainViewModel(c.Name, c.ProxyType, "https://" + c.ListenDomainNames.Split(';')[0]))
+                                                                        .ToList()))
+                                .ToList()),
+                    })
+                    .ToList();
+
+                EnableProxyDomainGroupVMs = enableGroupDomain.AsReadOnly();
+            });
+
         StartProxyCommand = ReactiveCommand.CreateFromTask(async _ =>
         {
 #if LINUX
@@ -29,6 +54,7 @@ public sealed partial class AcceleratorPageViewModel
             if (_initializeTime > DateTime.Now.AddSeconds(-2))
             {
                 Toast.Show(ToastIcon.Warning, Strings.Warning_DoNotOperateFrequently);
+
                 return;
             }
 
@@ -46,7 +72,7 @@ public sealed partial class AcceleratorPageViewModel
         ProxySettingsCommand = ReactiveCommand.Create(() =>
         {
             var vm = new ProxySettingsWindowViewModel();
-            IWindowManager.Instance.ShowTaskDialogAsync(vm, vm.Title, pageContent: new ProxySettingsPage(), isOkButton: false);
+            _ = IWindowManager.Instance.ShowTaskDialogAsync(vm, vm.Title, pageContent: new ProxySettingsPage(), isOkButton: false);
         });
 
         if (IApplication.IsDesktop())
@@ -65,10 +91,15 @@ public sealed partial class AcceleratorPageViewModel
                 certificateManager.GetCerFilePathGeneratedWhenNoFileExists();
                 platformService.OpenFolder(certificateManager.PfxFilePath);
             });
+            OpenLogFileCommand = ReactiveCommand.Create(() =>
+            {
+                platformService.OpenFolder(IPCSubProcessFileSystem.GetLogDirPath(Plugin.Instance.UniqueEnglishName));
+            });
         }
     }
 
 #if LINUX
+
     public bool EnvironmentCheck()
     {
         try
@@ -89,6 +120,7 @@ public sealed partial class AcceleratorPageViewModel
             return false;
         }
     }
+
 #endif
 
     public void TrustCer_OnClick()
